@@ -1,22 +1,6 @@
 /*
-Copyright 2005, 2006, 2007 Dennis van Weeren
-Copyright 2008, 2009 Jakub Bednarski
-Copyright 2012 Till Harbaum
-
-This file is part of Minimig
-
-Minimig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or
-(at your option) any later version.
-
-Minimig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Copyright 2019 alanswx
+with help from the MiSTer contributors including Grabulosaure 
 */
 
 #include <stdlib.h>
@@ -31,33 +15,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "fileaccess.h"
 
-const char *version = "$VER:HPS" VDATE;
+const char *version = "$VER:ScreenShot" VDATE;
 
 #define BASEADDR 536870912 
 
-
-//gameboy
-//#define width 160
-//#define height 144
-//genesis
-//#define width 320
-#define width 256
-#define height 448
-//#define width 448
-//#define height 320
-#define pixels 3
-
-int roundUp(int numToRound, int multiple)
-{
-    if (multiple == 0)
-        return numToRound;
-
-    int remainder = numToRound % multiple;
-    if (remainder == 0)
-        return numToRound;
-
-    return numToRound + multiple - remainder;
-}
+unsigned char buffer[2048*3*1024];
 
 int main(int argc, char *argv[])
 {
@@ -65,54 +27,53 @@ int main(int argc, char *argv[])
     void *handle;
     char *file = "/dev/mem";
     int ret;
-
-    printf("WIDTH: %d\n",width);
-    printf("WIDTH: %d\n",width*3);
-    int new_width = roundUp(width*3,256);
-    printf("NEW WIDTH: %d\n",new_width);
-    printf("NWIDTH: %d\n",new_width/3);
-    int nwidth = new_width/3;
-    unsigned char buffer[new_width*height];
-
+    
+    int width,height,line,header;
+    
+    
     handle = memtool_open(file, O_RDONLY);
-    printf("\nhandle= %x\n",handle);
-    ret = memtool_read(handle, BASEADDR, buffer, new_width*height, 1);
-    //for (int c = 0 ; c < new_width*height;c++)
-    //   ret = memtool_read(handle, BASEADDR+c, &(buffer[c]),1,1);
-    printf("\nret = %d\n",ret);
-    memtool_close(handle); 
-    printf("\nclose\n");
+    
+    ret = memtool_read(handle, BASEADDR, buffer, 128,4);
+    if (buffer[0]!=1 || buffer[1]!=1) {
+        memtool_close(handle);
+        return -1;
+    }
+    
+    header=buffer[2]<<8 | buffer[3];
+    width =buffer[6]<<8 | buffer[7];
+    height=buffer[8]<<8 | buffer[9];
+    line  =buffer[10]<<8 | buffer[11];
+    
+    
+    printf ("Image: Width=%i Height=%i  Line=%i  Header=%i\n",width,height,line,header);
+/*
+    printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
+            buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],
+            buffer[8],buffer[9],buffer[10],buffer[11],buffer[12],buffer[13],buffer[14],buffer[15]);
+    */
 
+    ret = memtool_read(handle, BASEADDR, buffer, header + height*line, 4);
+    memtool_close(handle);
+    
     FILE *out = fopen("out.pbm","w");
-	// Always pin main worker process to core #1 as core #0 is the
-	// hardware interrupt handler in Linux.  This reduces idle latency
-	// in the main loop by about 6-7x.
 	printf("\nScreenshot code by alanswx\n\n");
-
 	printf("Version %s\n\n", version + 5);
-
-        //unsigned char *pixbuf = (unsigned char *)536870912;
-        unsigned char *pixbuf = buffer;
-        fprintf(out,"P3\n%d %d\n255\n",nwidth,height);
-        for (int  y=0; y< height ; y++)
-          for (int x = 0; x < nwidth ; x++)
-          { 
+    
+    unsigned char *pixbuf;
+    fprintf(out,"P3\n%d %d\n255\n",width,height);
+    for (int  y=0; y< height ; y++) {
+          pixbuf=&buffer[header + y*line];
+          for (int x = 0; x < width ; x++) { 
             unsigned char r,g,b;
             r = *pixbuf++;
             g = *pixbuf++;
             b = *pixbuf++;
-            //if (x>=width) continue;
-            printf("%x %x %x\n",r,g,b);
             fprintf(out,"%d %d %d ",r,g,b);
-            if (x==nwidth-1) 
-            {
-              fprintf(out,"\n");
-              int dif = new_width - (nwidth*3);
-              pixbuf=pixbuf+dif;
-            }
           }
+          fprintf(out,"\n");
+    }
 
-        fclose(out);
-
-	return 0;
+    fclose(out);
+    
+    return 0;
 }
