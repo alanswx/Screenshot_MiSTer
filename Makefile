@@ -17,7 +17,7 @@ endif
 INCLUDE	= -I./
 
 PRJ = screenshot
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c) $(wildcard memtool/*.c)
 SRC2 = $(wildcard *.cpp)
 
 VPATH	= ./:./support/minimig:./support/sharpmz:./support/archie:./support/st:./support/x86:./support/snes
