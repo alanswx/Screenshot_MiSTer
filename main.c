@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
           fprintf(out,"\n");
     }
 
+    free(outputbuf);
     fclose(out);
     
     return 0;
