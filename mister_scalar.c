@@ -56,19 +56,49 @@ void mister_scalar_free(mister_scalar *ms)
    free(ms);
 }
 
+int mister_scalar_read_yuv(mister_scalar *ms,int lineY,unsigned char *bufY, int lineU, unsigned char *bufU, int lineV, unsigned char *bufV) {
+    unsigned char buffer[MISTER_SCALAR_BUFFERSIZE];
+    
+    memtool_read(ms->handle, MISTER_SCALAR_BASEADDR, buffer, ms->header + ms->height*ms->line, 4);
+   
+    // do this slow way for now.. 
+    unsigned char *pixbuf;
+    unsigned char *outbufy;
+    unsigned char *outbufU;
+    unsigned char *outbufV;
+    for (int  y=0; y< ms->height ; y++) {
+          pixbuf=&buffer[ms->header + y*ms->line];
+          outbufy=&bufY[y*(lineY)];
+          outbufU=&bufU[y*(lineU)];
+          outbufV=&bufV[y*(lineV)];
+          for (int x = 0; x < ms->width ; x++) { 
+		 int R,G,B;
+            R = *pixbuf++;
+            G = *pixbuf++;
+            B = *pixbuf++;
+            int Y  =      (0.257 * R) + (0.504 * G) + (0.098 * B) + 16;
+            int  U = -(0.148 * R) - (0.291 * G) + (0.439 * B) + 128;
+            int V =  (0.439 * R) - (0.368 * G) - (0.071 * B) + 128;
+
+            *outbufy++ = Y;
+            *outbufU++ = U;
+            *outbufV++ = V;
+          }
+    }
+    
+    return 0;
+
+}
 
 int mister_scalar_read(mister_scalar *ms,unsigned char *gbuf)
 {
     unsigned char buffer[MISTER_SCALAR_BUFFERSIZE];
     
-    printf("a\n");    
     memtool_read(ms->handle, MISTER_SCALAR_BASEADDR, buffer, ms->header + ms->height*ms->line, 4);
-    printf("b\n");    
    
-    // do this slow way for now.. 
+    // do this slow way for now..  - could use a memcpy?
     unsigned char *pixbuf;
     unsigned char *outbuf;
-    printf("c\n");    
     for (int  y=0; y< ms->height ; y++) {
           pixbuf=&buffer[ms->header + y*ms->line];
           outbuf=&gbuf[y*(ms->width*3)];

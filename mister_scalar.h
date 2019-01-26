@@ -20,4 +20,5 @@ typedef struct {
 
 mister_scalar *mister_scalar_init();
 int mister_scalar_read(mister_scalar *,unsigned char *buffer);
+int mister_scalar_read_yuv(mister_scalar *ms,int,unsigned char *y,int, unsigned char *U,int, unsigned char *V);
 void mister_scalar_free(mister_scalar *);

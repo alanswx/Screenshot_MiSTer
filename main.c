@@ -14,6 +14,7 @@ with help from the MiSTer contributors including Grabulosaure
 #include <fcntl.h>
 
 #include "memtool/fileaccess.h"
+#include "lodepng.h"
 
 #include "mister_scalar.h"
 
@@ -28,35 +29,28 @@ void mister_scalar_free(mister_scalar *);
 
 int main(int argc, char *argv[])
 {
+    char filename[4096];
+    strcpy(filename,"MiSTer_screenshot.png");
+    if (argc > 1) 
+    {
+        printf("output name: %s\n", argv[1]);
+	strcpy(filename,argv[1]);
+    }
+
     mister_scalar *ms=mister_scalar_init();
     if (ms==NULL)
     {
 	    printf("some problem with the mister scalar, maybe this core doesn't support it\n");
 	    exit(0);
     } 
-    FILE *out = fopen("out.pbm","w");
-	printf("\nScreenshot code by alanswx\n\n");
-	printf("Version %s\n\n", version + 5);
+    printf("\nScreenshot code by alanswx\n\n");
+    printf("Version %s\n\n", version + 5);
    
     unsigned char *outputbuf = calloc(ms->width*ms->height*3,1);	
-	printf("before read\n");
     mister_scalar_read(ms,outputbuf);
-	printf("after read\n");
-    unsigned char *pixbuf=outputbuf;
-    fprintf(out,"P3\n%d %d\n255\n",ms->width,ms->height);
-    for (int  y=0; y< ms->height ; y++) {
-          for (int x = 0; x < ms->width ; x++) { 
-            unsigned char r,g,b;
-            r = *pixbuf++;
-            g = *pixbuf++;
-            b = *pixbuf++;
-            fprintf(out,"%d %d %d ",r,g,b);
-          }
-          fprintf(out,"\n");
-    }
-
+    unsigned error = lodepng_encode24_file(filename, outputbuf, ms->width, ms->height);
+    if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
     free(outputbuf);
-    fclose(out);
-    
+    mister_scalar_free(ms); 
     return 0;
 }
