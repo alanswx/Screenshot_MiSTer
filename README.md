@@ -5,14 +5,12 @@ at 512MB there is an ASCAL buffer if the ASCAL is running on the FPGA. It has in
 This code is adapted from https://github.com/pengutronix/memtool/
 
 Ascal header has a frame counter at 0x20000005.
-``
--- b0 : Interlaced
--- b1 : Field number
--- b2 : Horizontal downscaled
--- b3 : Vertical downscaled
--- b4 : Triple buffered
--- b7-5 : Frame counter
-``
+* b0 : Interlaced
+* b1 : Field number
+* b2 : Horizontal downscaled
+* b3 : Vertical downscaled
+* b4 : Triple buffered
+* b7-5 : Frame counter
 
 Right now the code ignores the second and third buffers, but here is an explanation of how it could work, esp for the video version:
 
