@@ -16,7 +16,7 @@ endif
 
 INCLUDE	= -I./
 
-PRJ = screenshot
+PRJ = screensht
 SRC = $(wildcard *.c) $(wildcard memtool/*.c)
 SRC2 = $(wildcard *.cpp)
 

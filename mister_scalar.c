@@ -40,16 +40,16 @@ mister_scalar * mister_scalar_init()
     ms->map=mmap(NULL, ms->num_bytes+ms->map_off,PROT_READ, MAP_SHARED, ms->fd, map_start);
     if (ms->map==MAP_FAILED)
     {
-        printf("problem MAP_FAILED\n");
+        fprintf(stderr,"problem MAP_FAILED\n");
         mister_scalar_free(ms);
         return NULL;
     }
     buffer = (unsigned char *)(ms->map+ms->map_off);
-    printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
+    fprintf (stderr," 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
             buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],
             buffer[8],buffer[9],buffer[10],buffer[11],buffer[12],buffer[13],buffer[14],buffer[15]);
     if (buffer[0]!=1 || buffer[1]!=1) {
-        printf("problem\n");
+        fprintf(stderr,"problem\n");
         mister_scalar_free(ms);
         return NULL;
     }
@@ -59,7 +59,7 @@ mister_scalar * mister_scalar_init()
     ms->height=buffer[8]<<8 | buffer[9];
     ms->line  =buffer[10]<<8 | buffer[11];
    
-    printf ("Image: Width=%i Height=%i  Line=%i  Header=%i\n",ms->width,ms->height,ms->line,ms->header);
+    fprintf (stderr,"Image: Width=%i Height=%i  Line=%i  Header=%i\n",ms->width,ms->height,ms->line,ms->header);
    /*
     printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
             buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],

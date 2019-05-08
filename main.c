@@ -13,7 +13,6 @@ with help from the MiSTer contributors including Grabulosaure
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "memtool/fileaccess.h"
 #include "lodepng.h"
 
 #include "mister_scalar.h"
@@ -33,23 +32,32 @@ int main(int argc, char *argv[])
     strcpy(filename,"MiSTer_screenshot.png");
     if (argc > 1) 
     {
-        printf("output name: %s\n", argv[1]);
+        fprintf(stderr,"output name: %s\n", argv[1]);
 	strcpy(filename,argv[1]);
     }
 
     mister_scalar *ms=mister_scalar_init();
     if (ms==NULL)
     {
-	    printf("some problem with the mister scalar, maybe this core doesn't support it\n");
+	    fprintf(stderr,"some problem with the mister scalar, maybe this core doesn't support it\n");
 	    exit(0);
     } 
-    printf("\nScreenshot code by alanswx\n\n");
-    printf("Version %s\n\n", version + 5);
+    fprintf(stderr,"\nScreenshot code by alanswx\n\n");
+    fprintf(stderr,"Version %s\n\n", version + 5);
    
     unsigned char *outputbuf = calloc(ms->width*ms->height*3,1);	
     mister_scalar_read(ms,outputbuf);
-    unsigned error = lodepng_encode24_file(filename, outputbuf, ms->width, ms->height);
-    if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
+    unsigned error;
+    if (!strcmp("-",filename))
+    {
+	unsigned char *buf;
+	unsigned int outsize;
+    	error = lodepng_encode24(&buf,&outsize,outputbuf,ms->width,ms->height);
+	fwrite(buf,outsize,1,stdout);
+    }
+    else
+    	error = lodepng_encode24_file(filename, outputbuf, ms->width, ms->height);
+    if(error) fprintf(stderr,"error %u: %s\n", error, lodepng_error_text(error));
     free(outputbuf);
     mister_scalar_free(ms); 
     return 0;
