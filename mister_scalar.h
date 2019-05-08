@@ -10,7 +10,10 @@ typedef struct {
    int height;
    int line;
 
-   void *handle;
+   char *map;
+   int num_bytes;
+   int map_off;
+   int fd;
 } mister_scalar;
 
 

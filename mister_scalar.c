@@ -13,19 +13,38 @@ with help from the MiSTer contributors including Grabulosaure
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <err.h>
+
+
+
 #include "mister_scalar.h"
 
-#include "memtool/fileaccess.h"
 
 
 mister_scalar * mister_scalar_init()
 {
     mister_scalar *ms = calloc(sizeof(mister_scalar),1);
     char *file = "/dev/mem";
-    unsigned char buffer[MISTER_SCALAR_BUFFERSIZE];
-    ms->handle = memtool_open(file, O_RDONLY);
-    
-    memtool_read(ms->handle, MISTER_SCALAR_BASEADDR, buffer, 128,4);
+    int	 pagesize = sysconf(_SC_PAGE_SIZE);
+    if (pagesize==0) pagesize=4096;
+    int offset = MISTER_SCALAR_BASEADDR;
+    int	map_start = offset & ~(pagesize - 1);
+    ms->map_off = offset - map_start;
+    ms->num_bytes=MISTER_SCALAR_BUFFERSIZE;
+    //printf("map_start = %d map_off=%d offset=%d\n",map_start,ms->map_off,offset);
+
+    unsigned char *buffer;
+    ms->fd=open(file, O_RDONLY, S_IRUSR | S_IWUSR);
+    ms->map=mmap(NULL, ms->num_bytes+ms->map_off,PROT_READ, MAP_SHARED, ms->fd, map_start);
+    if (ms->map==MAP_FAILED)
+    {
+        printf("problem MAP_FAILED\n");
+        mister_scalar_free(ms);
+        return NULL;
+    }
+    buffer = (unsigned char *)(ms->map+ms->map_off);
     printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
             buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],
             buffer[8],buffer[9],buffer[10],buffer[11],buffer[12],buffer[13],buffer[14],buffer[15]);
@@ -52,15 +71,15 @@ mister_scalar * mister_scalar_init()
 }
 void mister_scalar_free(mister_scalar *ms)
 {
-   memtool_close(ms->handle);
+   munmap(ms->map,ms->num_bytes+ms->map_off);
+   close(ms->fd);
    free(ms);
 }
 
 int mister_scalar_read_yuv(mister_scalar *ms,int lineY,unsigned char *bufY, int lineU, unsigned char *bufU, int lineV, unsigned char *bufV) {
-    unsigned char buffer[MISTER_SCALAR_BUFFERSIZE];
-    
-    memtool_read(ms->handle, MISTER_SCALAR_BASEADDR, buffer, ms->header + ms->height*ms->line, 4);
-   
+    unsigned char *buffer;
+    buffer = (unsigned char *)(ms->map+ms->map_off);
+
     // do this slow way for now.. 
     unsigned char *pixbuf;
     unsigned char *outbufy;
@@ -92,9 +111,8 @@ int mister_scalar_read_yuv(mister_scalar *ms,int lineY,unsigned char *bufY, int 
 
 int mister_scalar_read(mister_scalar *ms,unsigned char *gbuf)
 {
-    unsigned char buffer[MISTER_SCALAR_BUFFERSIZE];
-    
-    memtool_read(ms->handle, MISTER_SCALAR_BASEADDR, buffer, ms->header + ms->height*ms->line, 4);
+    unsigned char *buffer;
+    buffer = (unsigned char *)(ms->map+ms->map_off);
    
     // do this slow way for now..  - could use a memcpy?
     unsigned char *pixbuf;
