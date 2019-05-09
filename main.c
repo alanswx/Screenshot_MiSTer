@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     if (ms==NULL)
     {
 	    fprintf(stderr,"some problem with the mister scalar, maybe this core doesn't support it\n");
-	    exit(0);
+	    exit(1);
     } 
     fprintf(stderr,"\nScreenshot code by alanswx\n\n");
     fprintf(stderr,"Version %s\n\n", version + 5);
@@ -60,5 +60,8 @@ int main(int argc, char *argv[])
     if(error) fprintf(stderr,"error %u: %s\n", error, lodepng_error_text(error));
     free(outputbuf);
     mister_scalar_free(ms); 
-    return 0;
+    if (error)
+        return 1;
+    else
+        return 0;
 }
