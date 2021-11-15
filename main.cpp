@@ -29,6 +29,7 @@ void mister_scaler_free(mister_scaler *);
 int main(int argc, char *argv[])
 {
     char filename[4096];
+    char scaled_filename[4096+512];
     strcpy(filename,"MiSTer_screenshot.png");
     if (argc > 1) 
     {
@@ -55,6 +56,15 @@ int main(int argc, char *argv[])
     }
     else
 	imlib_save_image(filename);
+
+
+    sprintf(scaled_filename,"SCALE_%s",filename);
+    printf("filename:[%s]\n",filename);
+
+
+    Imlib_Image im_scaled=imlib_create_cropped_scaled_image(0,0,ms->width,ms->height,ms->output_width,ms->output_height);
+    imlib_context_set_image(im_scaled);
+    imlib_save_image(scaled_filename);
     //free(outputbuf);
     mister_scaler_free(ms); 
 
