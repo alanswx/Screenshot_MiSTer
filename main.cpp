@@ -13,9 +13,9 @@ with help from the MiSTer contributors including Grabulosaure
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "lodepng.h"
+#include "lib/imlib2/Imlib2.h"
 
-#include "mister_scalar.h"
+#include "scaler.h"
 
 const char *version = "$VER:ScreenShot" VDATE;
 
@@ -23,7 +23,7 @@ const char *version = "$VER:ScreenShot" VDATE;
 
 unsigned char buffer[2048*3*1024];
 
-void mister_scalar_free(mister_scalar *);
+void mister_scaler_free(mister_scaler *);
 
 
 int main(int argc, char *argv[])
@@ -36,32 +36,27 @@ int main(int argc, char *argv[])
 	strcpy(filename,argv[1]);
     }
 
-    mister_scalar *ms=mister_scalar_init();
+    mister_scaler *ms=mister_scaler_init();
     if (ms==NULL)
     {
-	    fprintf(stderr,"some problem with the mister scalar, maybe this core doesn't support it\n");
+	    fprintf(stderr,"some problem with the mister scaler, maybe this core doesn't support it\n");
 	    exit(1);
     } 
     fprintf(stderr,"\nScreenshot code by alanswx\n\n");
     fprintf(stderr,"Version %s\n\n", version + 5);
    
-    unsigned char *outputbuf = calloc(ms->width*ms->height*3,1);	
-    mister_scalar_read(ms,outputbuf);
-    unsigned error;
+    unsigned char *outputbuf = (unsigned char*)calloc(ms->width*ms->height*4,1);	
+    mister_scaler_read_32(ms,outputbuf);
+    Imlib_Image im = imlib_create_image_using_data(ms->width,ms->height,(unsigned int *)outputbuf);
+    imlib_context_set_image(im);
     if (!strcmp("-",filename))
     {
-	unsigned char *buf;
-	unsigned int outsize;
-    	error = lodepng_encode24(&buf,&outsize,outputbuf,ms->width,ms->height);
-	fwrite(buf,outsize,1,stdout);
+	fprintf(stderr,"not implemented\n");
     }
     else
-    	error = lodepng_encode24_file(filename, outputbuf, ms->width, ms->height);
-    if(error) fprintf(stderr,"error %u: %s\n", error, lodepng_error_text(error));
-    free(outputbuf);
-    mister_scalar_free(ms); 
-    if (error)
-        return 1;
-    else
-        return 0;
+	imlib_save_image(filename);
+    //free(outputbuf);
+    mister_scaler_free(ms); 
+
+    return 0;
 }
